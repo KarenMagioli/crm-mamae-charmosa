@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, ShoppingBag, Package, DollarSign, ClipboardList, XCircle } from "lucide-react";
+import { LayoutDashboard, Users, ShoppingBag, Package, DollarSign, ClipboardList, XCircle, FileText } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -14,7 +14,7 @@ import {
 
 const items = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Clientes / Leads", url: "/leads", icon: Users },
+  { title: "Funil de Vendas", url: "/leads", icon: Users },
   { title: "Vendas", url: "/vendas", icon: ShoppingBag },
   { title: "Vendas Perdidas", url: "/vendas-perdidas", icon: XCircle },
   { title: "Produtos", url: "/produtos", icon: Package },
@@ -25,7 +25,6 @@ const items = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
