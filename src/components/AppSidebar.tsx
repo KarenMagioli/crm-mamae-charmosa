@@ -1,4 +1,5 @@
-import { LayoutDashboard, Users, ShoppingBag, Package, DollarSign, ClipboardList, XCircle, FileText } from "lucide-react";
+import { LayoutDashboard, Users, ShoppingBag, Package, DollarSign, ClipboardList, XCircle, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
