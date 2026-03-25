@@ -32,7 +32,10 @@ export default function ProductsPage() {
     setOpen(false);
   };
 
-  const profit = form.price - form.cost;
+  const hasCost = form.cost > 0;
+  const hasPrice = form.price > 0;
+  const canCalculateProfit = hasCost && hasPrice;
+  const profit = canCalculateProfit ? form.price - form.cost : 0;
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -52,7 +55,11 @@ export default function ProductsPage() {
               <div><Label>Custo (R$)</Label><Input type="number" value={form.cost} onChange={e => setForm({...form, cost: Number(e.target.value)})} /></div>
               <div><Label>Preço de Venda (R$) *</Label><Input type="number" value={form.price} onChange={e => setForm({...form, price: Number(e.target.value)})} /></div>
               <div className="p-3 rounded-lg bg-accent">
-                <p className="text-sm font-medium">Lucro estimado: <span className={profit >= 0 ? 'text-success' : 'text-destructive'}>R$ {profit.toFixed(2)}</span></p>
+                {canCalculateProfit ? (
+                  <p className="text-sm font-medium">Lucro estimado: <span className={profit >= 0 ? 'text-success' : 'text-destructive'}>R$ {profit.toFixed(2)}</span></p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Informe o custo e o preço para calcular o lucro</p>
+                )}
               </div>
               <Button onClick={save} className="w-full">{editing ? 'Salvar' : 'Cadastrar'}</Button>
             </div>
