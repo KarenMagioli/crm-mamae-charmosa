@@ -17,6 +17,8 @@ export interface Lead {
   status: LeadStatus;
   notes: string;
   createdAt: string;
+  lossReason?: LeadLossReason;
+  lossReasonDetail?: string;
 }
 
 export interface Product {
@@ -90,6 +92,14 @@ export const LOST_REASON_LABELS: Record<LostReason, string> = {
   preco_alto: 'Preço Alto',
   desistencia: 'Desistência',
   demora: 'Demora',
+  outro: 'Outro',
+};
+
+export const LEAD_LOSS_REASON_LABELS: Record<LeadLossReason, string> = {
+  desistencia: 'Desistência',
+  financeiro: 'Financeiro',
+  nao_informado: 'Não Informado',
+  insatisfacao: 'Insatisfação',
   outro: 'Outro',
 };
 
