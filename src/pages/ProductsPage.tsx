@@ -32,7 +32,10 @@ export default function ProductsPage() {
     setOpen(false);
   };
 
-  const profit = form.price - form.cost;
+  const hasCost = form.cost > 0;
+  const hasPrice = form.price > 0;
+  const canCalculateProfit = hasCost && hasPrice;
+  const profit = canCalculateProfit ? form.price - form.cost : 0;
 
   return (
     <div className="space-y-4 animate-fade-in">
