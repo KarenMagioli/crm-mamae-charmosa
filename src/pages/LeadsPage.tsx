@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCrm } from "@/contexts/CrmContext";
-import { Lead, LeadStatus, LeadOrigin, LEAD_STATUS_LABELS, ORIGIN_LABELS } from "@/types/crm";
+import { Lead, LeadStatus, LeadOrigin, LeadLossReason, LEAD_STATUS_LABELS, ORIGIN_LABELS, LEAD_LOSS_REASON_LABELS } from "@/types/crm";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,11 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Pencil, Trash2, List, Columns3 } from "lucide-react";
 import { toast } from "sonner";
 
-const emptyLead = { name: '', phone: '', origin: 'instagram' as LeadOrigin, productInterest: '', status: 'novo' as LeadStatus, notes: '' };
+const emptyLead = { name: '', phone: '', origin: 'instagram' as LeadOrigin, productInterest: '', status: 'novo' as LeadStatus, notes: '', lossReason: undefined as LeadLossReason | undefined, lossReasonDetail: '' };
 
 const statusColor: Record<LeadStatus, string> = {
   novo: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -49,6 +48,12 @@ function LeadCard({ lead, onEdit, onDelete }: { lead: Lead; onEdit: (l: Lead) =>
             <Badge variant="outline" className={`mt-1.5 text-[10px] px-1.5 py-0 ${statusColor[lead.status]}`}>
               {ORIGIN_LABELS[lead.origin]}
             </Badge>
+            {lead.status === 'perdido' && lead.lossReason && (
+              <p className="text-[10px] mt-1 text-destructive font-medium">
+                ❌ {LEAD_LOSS_REASON_LABELS[lead.lossReason]}
+                {lead.lossReason === 'outro' && lead.lossReasonDetail ? `: ${lead.lossReasonDetail}` : ''}
+              </p>
+            )}
           </div>
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEdit(lead)}><Pencil className="h-3 w-3" /></Button>
@@ -69,18 +74,30 @@ export default function LeadsPage() {
   const [view, setView] = useState<'kanban' | 'list'>('kanban');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterOrigin, setFilterOrigin] = useState<string>('all');
+  const [filterLossReason, setFilterLossReason] = useState<string>('all');
   const [search, setSearch] = useState('');
 
   const openNew = () => { setEditing(null); setForm(emptyLead); setOpen(true); };
-  const openEdit = (lead: Lead) => { setEditing(lead); setForm(lead); setOpen(true); };
+  const openEdit = (lead: Lead) => { setEditing(lead); setForm({ ...lead, lossReason: lead.lossReason, lossReasonDetail: lead.lossReasonDetail || '' }); setOpen(true); };
 
   const save = () => {
     if (!form.name || !form.phone) { toast.error('Preencha nome e telefone'); return; }
+    if (form.status === 'perdido') {
+      if (!form.lossReason) { toast.error('Selecione o motivo da perda'); return; }
+      if (form.lossReason === 'outro' && !form.lossReasonDetail?.trim()) { toast.error('Detalhe o motivo da perda'); return; }
+    }
+
+    const leadData = {
+      ...form,
+      lossReason: form.status === 'perdido' ? form.lossReason : undefined,
+      lossReasonDetail: form.status === 'perdido' && form.lossReason === 'outro' ? form.lossReasonDetail : undefined,
+    };
+
     if (editing) {
-      updateLead({ ...editing, ...form });
+      updateLead({ ...editing, ...leadData });
       toast.success('Cliente atualizado!');
     } else {
-      addLead(form);
+      addLead(leadData);
       toast.success('Cliente cadastrado!');
     }
     setOpen(false);
@@ -89,15 +106,26 @@ export default function LeadsPage() {
   const remove = (id: string) => { deleteLead(id); toast.success('Cliente removido!'); };
 
   const moveStatus = (lead: Lead, newStatus: LeadStatus) => {
-    updateLead({ ...lead, status: newStatus });
+    if (newStatus === 'perdido') {
+      openEdit({ ...lead, status: newStatus });
+      return;
+    }
+    updateLead({ ...lead, status: newStatus, lossReason: undefined, lossReasonDetail: undefined });
   };
 
   const filtered = leads.filter(l => {
     if (filterStatus !== 'all' && l.status !== filterStatus) return false;
     if (filterOrigin !== 'all' && l.origin !== filterOrigin) return false;
+    if (filterLossReason !== 'all' && l.lossReason !== filterLossReason) return false;
     if (search && !l.name.toLowerCase().includes(search.toLowerCase()) && !l.phone.includes(search)) return false;
     return true;
   });
+
+  // Loss reason stats
+  const lostLeads = leads.filter(l => l.status === 'perdido');
+  const lossReasonCounts = Object.entries(LEAD_LOSS_REASON_LABELS).map(([key, label]) => ({
+    key, label, count: lostLeads.filter(l => l.lossReason === key).length,
+  })).filter(r => r.count > 0);
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -117,7 +145,7 @@ export default function LeadsPage() {
             <DialogTrigger asChild>
               <Button onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Adicionar</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editing ? 'Editar Cliente' : 'Novo Cliente'}</DialogTitle>
               </DialogHeader>
@@ -132,11 +160,33 @@ export default function LeadsPage() {
                 </div>
                 <div><Label>Produto de Interesse</Label><Input value={form.productInterest} onChange={e => setForm({...form, productInterest: e.target.value})} /></div>
                 <div><Label>Status</Label>
-                  <Select value={form.status} onValueChange={v => setForm({...form, status: v as LeadStatus})}>
+                  <Select value={form.status} onValueChange={v => setForm({...form, status: v as LeadStatus, lossReason: v !== 'perdido' ? undefined : form.lossReason})}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{Object.entries(LEAD_STATUS_LABELS).map(([k,v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
+
+                {/* Motivo da Perda - only when status is 'perdido' */}
+                {form.status === 'perdido' && (
+                  <div className="space-y-3 p-3 rounded-lg border border-destructive/30 bg-destructive/5">
+                    <div>
+                      <Label className="text-destructive font-semibold">Motivo da Perda *</Label>
+                      <Select value={form.lossReason || ''} onValueChange={v => setForm({...form, lossReason: v as LeadLossReason, lossReasonDetail: v !== 'outro' ? '' : form.lossReasonDetail})}>
+                        <SelectTrigger><SelectValue placeholder="Selecione o motivo..." /></SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(LEAD_LOSS_REASON_LABELS).map(([k,v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {form.lossReason === 'outro' && (
+                      <div>
+                        <Label className="text-destructive font-semibold">Detalhamento do motivo *</Label>
+                        <Textarea value={form.lossReasonDetail} onChange={e => setForm({...form, lossReasonDetail: e.target.value})} rows={2} placeholder="Descreva o motivo..." />
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div><Label>Observações</Label><Textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} rows={3} /></div>
                 <Button onClick={save} className="w-full">{editing ? 'Salvar' : 'Cadastrar'}</Button>
               </div>
@@ -164,7 +214,26 @@ export default function LeadsPage() {
             {Object.entries(ORIGIN_LABELS).map(([k,v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={filterLossReason} onValueChange={setFilterLossReason}>
+          <SelectTrigger className="w-[170px] h-9"><SelectValue placeholder="Motivo Perda" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos Motivos</SelectItem>
+            {Object.entries(LEAD_LOSS_REASON_LABELS).map(([k,v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
+
+      {/* Loss reason summary */}
+      {lossReasonCounts.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <span className="text-xs text-muted-foreground self-center">Perdas:</span>
+          {lossReasonCounts.map(r => (
+            <Badge key={r.key} variant="outline" className="text-xs bg-destructive/10 text-destructive border-destructive/20">
+              {r.label}: {r.count}
+            </Badge>
+          ))}
+        </div>
+      )}
 
       {/* Kanban View */}
       {view === 'kanban' && (
@@ -187,7 +256,6 @@ export default function LeadsPage() {
                     {columnLeads.map(lead => (
                       <div key={lead.id}>
                         <LeadCard lead={lead} onEdit={openEdit} onDelete={remove} />
-                        {/* Quick move buttons */}
                         <div className="flex gap-1 mt-1 flex-wrap">
                           {LEAD_STATUSES.filter(s => s !== status).slice(0, 3).map(s => (
                             <button
@@ -225,6 +293,12 @@ export default function LeadsPage() {
                     </div>
                     <p className="text-sm text-muted-foreground">{lead.phone} · {ORIGIN_LABELS[lead.origin]}</p>
                     {lead.productInterest && <p className="text-sm">Interesse: {lead.productInterest}</p>}
+                    {lead.status === 'perdido' && lead.lossReason && (
+                      <p className="text-sm text-destructive mt-1">
+                        Motivo da perda: <strong>{LEAD_LOSS_REASON_LABELS[lead.lossReason]}</strong>
+                        {lead.lossReason === 'outro' && lead.lossReasonDetail ? ` — ${lead.lossReasonDetail}` : ''}
+                      </p>
+                    )}
                     {lead.notes && <p className="text-xs text-muted-foreground mt-1">{lead.notes}</p>}
                   </div>
                   <div className="flex gap-2 shrink-0">
