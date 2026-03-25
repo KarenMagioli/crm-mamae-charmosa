@@ -2,6 +2,7 @@ export type LeadStatus = 'novo' | 'em_atendimento' | 'orcamento_enviado' | 'agua
 export type PaymentMethod = 'pix' | 'dinheiro' | 'cartao';
 export type SaleStatus = 'pendente' | 'pago' | 'cancelado';
 export type LostReason = 'preco_alto' | 'desistencia' | 'demora' | 'outro';
+export type LeadLossReason = 'desistencia' | 'financeiro' | 'nao_informado' | 'insatisfacao' | 'outro';
 export type ProductionStatus = 'em_producao' | 'pronto' | 'entregue';
 export type FinanceType = 'entrada' | 'saida';
 export type FinanceCategory = 'venda' | 'custo_material' | 'outros';
