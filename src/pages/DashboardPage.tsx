@@ -5,7 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ShoppingBag, DollarSign, XCircle, TrendingUp, AlertTriangle, Clock, BarChart3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { LOST_REASON_LABELS } from "@/types/crm";
+import { LOST_REASON_LABELS, LEAD_LOSS_REASON_LABELS } from "@/types/crm";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
@@ -68,12 +69,24 @@ export default function DashboardPage() {
     return getDaysUntil(o.deadline) <= 3;
   }).sort((a, b) => getDaysUntil(a.deadline) - getDaysUntil(b.deadline)), [production]);
 
-  // Lost reasons breakdown
+  // Lost reasons breakdown (from lostSales)
   const lostByReason = useMemo(() => {
     const map: Record<string, number> = {};
     monthlyLost.forEach(ls => { map[ls.reason] = (map[ls.reason] || 0) + 1; });
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [monthlyLost]);
+
+  // Lead loss reasons breakdown (from leads with status 'perdido')
+  const LOSS_COLORS = ['#ef4444', '#f97316', '#eab308', '#8b5cf6', '#6b7280'];
+  const leadLossReasonData = useMemo(() => {
+    const lostLeads = leads.filter(l => l.status === 'perdido' && l.lossReason);
+    const map: Record<string, number> = {};
+    lostLeads.forEach(l => { if (l.lossReason) map[l.lossReason] = (map[l.lossReason] || 0) + 1; });
+    return Object.entries(map).map(([key, value]) => ({
+      name: LEAD_LOSS_REASON_LABELS[key as keyof typeof LEAD_LOSS_REASON_LABELS] || key,
+      value,
+    })).sort((a, b) => b.value - a.value);
+  }, [leads]);
 
   // Top products breakdown
   const topProducts = Object.entries(productCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
@@ -193,6 +206,45 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Loss Reason Charts */}
+      {leadLossReasonData.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2"><CardTitle className="text-sm">🥧 Motivos de Perda (Pizza)</CardTitle></CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie data={leadLossReasonData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                    {leadLossReasonData.map((_, i) => (
+                      <Cell key={i} fill={LOSS_COLORS[i % LOSS_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2"><CardTitle className="text-sm">📊 Motivos de Perda (Barras)</CardTitle></CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={leadLossReasonData} layout="vertical" margin={{ left: 20 }}>
+                  <XAxis type="number" allowDecimals={false} />
+                  <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Bar dataKey="value" name="Leads perdidos" radius={[0, 4, 4, 0]}>
+                    {leadLossReasonData.map((_, i) => (
+                      <Cell key={i} fill={LOSS_COLORS[i % LOSS_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Monthly Report Section */}
       <Card className="shadow-sm">
