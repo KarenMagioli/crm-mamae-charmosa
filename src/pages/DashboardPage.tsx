@@ -159,27 +159,6 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Financial summary */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Saldo Financeiro</CardTitle></CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div>
-                <p className="text-xs text-muted-foreground">Entradas</p>
-                <p className="text-base font-bold text-success">R$ {entradas.toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Saídas</p>
-                <p className="text-base font-bold text-destructive">R$ {saidas.toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Saldo</p>
-                <p className={`text-base font-bold ${saldo >= 0 ? 'text-success' : 'text-destructive'}`}>R$ {saldo.toFixed(2)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Top product */}
         <Card className="shadow-sm">
           <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><BarChart3 className="h-4 w-4" /> Produtos Mais Vendidos</CardTitle></CardHeader>
