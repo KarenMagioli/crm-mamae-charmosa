@@ -52,8 +52,8 @@ export default function ProductsPage() {
             <DialogHeader><DialogTitle>{editing ? 'Editar Produto' : 'Novo Produto'}</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div><Label>Nome *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
-              <div><Label>Custo (R$)</Label><Input type="number" value={form.cost} onChange={e => setForm({...form, cost: Number(e.target.value)})} /></div>
-              <div><Label>Preço de Venda (R$) *</Label><Input type="number" value={form.price} onChange={e => setForm({...form, price: Number(e.target.value)})} /></div>
+              <div><Label>Custo (R$)</Label><Input type="number" min="0" step="0.01" value={form.cost || ''} onChange={e => setForm({...form, cost: Number(e.target.value)})} /></div>
+              <div><Label>Preço de Venda (R$) *</Label><Input type="number" min="0" step="0.01" value={form.price || ''} onChange={e => setForm({...form, price: Number(e.target.value)})} /></div>
               <div className="p-3 rounded-lg bg-accent">
                 {canCalculateProfit ? (
                   <p className="text-sm font-medium">Lucro estimado: <span className={profit >= 0 ? 'text-success' : 'text-destructive'}>R$ {profit.toFixed(2)}</span></p>

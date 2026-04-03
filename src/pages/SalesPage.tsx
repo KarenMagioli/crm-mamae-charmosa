@@ -89,7 +89,7 @@ export default function SalesPage() {
                   <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name} - R$ {p.price.toFixed(2)}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>Valor (R$) *</Label><Input type="number" value={form.value} onChange={e => setForm({...form, value: Number(e.target.value)})} /></div>
+              <div><Label>Valor (R$) *</Label><Input type="number" min="0" step="0.01" value={form.value || ''} onChange={e => setForm({...form, value: Number(e.target.value)})} /></div>
               <div><Label>Data</Label><Input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
               <div><Label>Pagamento</Label>
                 <Select value={form.paymentMethod} onValueChange={v => setForm({...form, paymentMethod: v as PaymentMethod})}>
