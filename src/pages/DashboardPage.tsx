@@ -91,11 +91,15 @@ export default function DashboardPage() {
   // Top products breakdown
   const topProducts = Object.entries(productCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
+  const totalCancellations = cancellations.length;
+  const totalReembolsoValue = cancellations.filter(c => c.reembolso === 'sim').reduce((s, c) => s + c.closingValue, 0);
+  const totalClients = leads.length;
+
   const cards = [
-    { title: "Vendas", value: totalSalesCount, icon: ShoppingBag, color: "text-primary" },
-    { title: "Faturamento", value: `R$ ${totalRevenue.toFixed(2)}`, icon: DollarSign, color: "text-success" },
-    { title: "Lucro", value: `R$ ${totalProfit.toFixed(2)}`, icon: TrendingUp, color: "text-success" },
-    { title: "Vendas Perdidas", value: monthlyLost.length, icon: XCircle, color: "text-destructive" },
+    { title: "Total Clientes", value: totalClients, icon: ShoppingBag, color: "text-primary" },
+    { title: "Vendas", value: totalSalesCount, icon: DollarSign, color: "text-success" },
+    { title: "Faturamento", value: `R$ ${totalRevenue.toFixed(2)}`, icon: TrendingUp, color: "text-success" },
+    { title: "Cancelamentos", value: totalCancellations, icon: XCircle, color: "text-destructive" },
   ];
 
   return (
