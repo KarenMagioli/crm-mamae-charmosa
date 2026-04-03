@@ -15,9 +15,10 @@ import {
 
 const items = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Funil de Vendas", url: "/leads", icon: Users },
+  { title: "Funil de Clientes", url: "/leads", icon: Users },
   { title: "Vendas", url: "/vendas", icon: ShoppingBag },
   { title: "Vendas Perdidas", url: "/vendas-perdidas", icon: XCircle },
+  { title: "Cancelamentos", url: "/cancelamentos", icon: Ban },
   { title: "Produtos", url: "/produtos", icon: Package },
   { title: "Financeiro", url: "/financeiro", icon: DollarSign },
   { title: "Produção", url: "/producao", icon: ClipboardList },
