@@ -67,12 +67,27 @@ export interface FinanceEntry {
   saleId?: string;
 }
 
+export interface CancellationRequest {
+  id: string;
+  requestDate: string;
+  client: string;
+  orderDate: string;
+  closingValue: number;
+  closer: string;
+  product: string;
+  reason: string;
+  status: CancellationStatus;
+  reembolso: ReembolsoOption;
+  obs: string;
+}
+
 export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
-  novo: 'Novo Lead',
-  em_atendimento: 'Em Atendimento',
+  lead_instagram: 'Lead Instagram',
+  primeiro_contato: 'Primeiro Contato',
   orcamento_enviado: 'Orçamento Enviado',
-  aguardando_resposta: 'Aguardando Resposta',
-  fechado_ganho: 'Fechado - Ganho',
+  negociacao: 'Negociação',
+  fechado_ganho: 'Cliente Fechado',
+  pos_venda: 'Pós-venda',
   perdido: 'Perdido',
 };
 
@@ -115,4 +130,15 @@ export const SALE_STATUS_LABELS: Record<SaleStatus, string> = {
   pendente: 'Pendente',
   pago: 'Pago',
   cancelado: 'Cancelado',
+};
+
+export const CANCELLATION_STATUS_LABELS: Record<CancellationStatus, string> = {
+  em_analise: 'Em Análise',
+  aprovado: 'Aprovado',
+  negado: 'Negado',
+};
+
+export const REEMBOLSO_LABELS: Record<ReembolsoOption, string> = {
+  sim: 'Sim',
+  nao: 'Não',
 };
