@@ -13,6 +13,7 @@ import LostSalesPage from "./pages/LostSalesPage";
 import ProductsPage from "./pages/ProductsPage";
 import FinancePage from "./pages/FinancePage";
 import ProductionPage from "./pages/ProductionPage";
+import CancellationsPage from "./pages/CancellationsPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -72,6 +73,7 @@ const AppRoutes = () => (
                 <Route path="/produtos" element={<ProductsPage />} />
                 <Route path="/financeiro" element={<FinancePage />} />
                 <Route path="/producao" element={<ProductionPage />} />
+                <Route path="/cancelamentos" element={<CancellationsPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </AppLayout>

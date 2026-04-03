@@ -1,4 +1,4 @@
-export type LeadStatus = 'novo' | 'em_atendimento' | 'orcamento_enviado' | 'aguardando_resposta' | 'fechado_ganho' | 'perdido';
+export type LeadStatus = 'lead_instagram' | 'primeiro_contato' | 'orcamento_enviado' | 'negociacao' | 'fechado_ganho' | 'pos_venda' | 'perdido';
 export type PaymentMethod = 'pix' | 'dinheiro' | 'cartao';
 export type SaleStatus = 'pendente' | 'pago' | 'cancelado';
 export type LostReason = 'preco_alto' | 'desistencia' | 'demora' | 'outro';
@@ -7,6 +7,8 @@ export type ProductionStatus = 'em_producao' | 'pronto' | 'entregue';
 export type FinanceType = 'entrada' | 'saida';
 export type FinanceCategory = 'venda' | 'custo_material' | 'outros';
 export type LeadOrigin = 'instagram' | 'indicacao' | 'whatsapp' | 'facebook' | 'outro';
+export type CancellationStatus = 'em_analise' | 'aprovado' | 'negado';
+export type ReembolsoOption = 'sim' | 'nao';
 
 export interface Lead {
   id: string;
@@ -65,12 +67,27 @@ export interface FinanceEntry {
   saleId?: string;
 }
 
+export interface CancellationRequest {
+  id: string;
+  requestDate: string;
+  client: string;
+  orderDate: string;
+  closingValue: number;
+  closer: string;
+  product: string;
+  reason: string;
+  status: CancellationStatus;
+  reembolso: ReembolsoOption;
+  obs: string;
+}
+
 export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
-  novo: 'Novo Lead',
-  em_atendimento: 'Em Atendimento',
+  lead_instagram: 'Lead Instagram',
+  primeiro_contato: 'Primeiro Contato',
   orcamento_enviado: 'Orçamento Enviado',
-  aguardando_resposta: 'Aguardando Resposta',
-  fechado_ganho: 'Fechado - Ganho',
+  negociacao: 'Negociação',
+  fechado_ganho: 'Cliente Fechado',
+  pos_venda: 'Pós-venda',
   perdido: 'Perdido',
 };
 
@@ -113,4 +130,15 @@ export const SALE_STATUS_LABELS: Record<SaleStatus, string> = {
   pendente: 'Pendente',
   pago: 'Pago',
   cancelado: 'Cancelado',
+};
+
+export const CANCELLATION_STATUS_LABELS: Record<CancellationStatus, string> = {
+  em_analise: 'Em Análise',
+  aprovado: 'Aprovado',
+  negado: 'Negado',
+};
+
+export const REEMBOLSO_LABELS: Record<ReembolsoOption, string> = {
+  sim: 'Sim',
+  nao: 'Não',
 };

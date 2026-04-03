@@ -12,27 +12,29 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, List, Columns3 } from "lucide-react";
 import { toast } from "sonner";
 
-const emptyLead = { name: '', phone: '', origin: 'instagram' as LeadOrigin, productInterest: '', status: 'novo' as LeadStatus, notes: '', lossReason: undefined as LeadLossReason | undefined, lossReasonDetail: '' };
+const emptyLead = { name: '', phone: '', origin: 'instagram' as LeadOrigin, productInterest: '', status: 'lead_instagram' as LeadStatus, notes: '', lossReason: undefined as LeadLossReason | undefined, lossReasonDetail: '' };
 
 const statusColor: Record<LeadStatus, string> = {
-  novo: 'bg-blue-50 text-blue-700 border-blue-200',
-  em_atendimento: 'bg-amber-50 text-amber-700 border-amber-200',
+  lead_instagram: 'bg-pink-50 text-pink-700 border-pink-200',
+  primeiro_contato: 'bg-blue-50 text-blue-700 border-blue-200',
   orcamento_enviado: 'bg-orange-50 text-orange-700 border-orange-200',
-  aguardando_resposta: 'bg-purple-50 text-purple-700 border-purple-200',
+  negociacao: 'bg-purple-50 text-purple-700 border-purple-200',
   fechado_ganho: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  pos_venda: 'bg-teal-50 text-teal-700 border-teal-200',
   perdido: 'bg-red-50 text-red-700 border-red-200',
 };
 
 const kanbanColumnColor: Record<LeadStatus, string> = {
-  novo: 'border-t-blue-400',
-  em_atendimento: 'border-t-amber-400',
+  lead_instagram: 'border-t-pink-400',
+  primeiro_contato: 'border-t-blue-400',
   orcamento_enviado: 'border-t-orange-400',
-  aguardando_resposta: 'border-t-purple-400',
+  negociacao: 'border-t-purple-400',
   fechado_ganho: 'border-t-emerald-400',
+  pos_venda: 'border-t-teal-400',
   perdido: 'border-t-red-400',
 };
 
-const LEAD_STATUSES: LeadStatus[] = ['novo', 'em_atendimento', 'orcamento_enviado', 'aguardando_resposta', 'fechado_ganho', 'perdido'];
+const LEAD_STATUSES: LeadStatus[] = ['lead_instagram', 'primeiro_contato', 'orcamento_enviado', 'negociacao', 'fechado_ganho', 'pos_venda', 'perdido'];
 
 function LeadCard({ lead, onEdit, onDelete }: { lead: Lead; onEdit: (l: Lead) => void; onDelete: (id: string) => void }) {
   return (
@@ -121,7 +123,6 @@ export default function LeadsPage() {
     return true;
   });
 
-  // Loss reason stats
   const lostLeads = leads.filter(l => l.status === 'perdido');
   const lossReasonCounts = Object.entries(LEAD_LOSS_REASON_LABELS).map(([key, label]) => ({
     key, label, count: lostLeads.filter(l => l.lossReason === key).length,
@@ -131,7 +132,7 @@ export default function LeadsPage() {
     <div className="space-y-4 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Clientes / Leads</h1>
+          <h1 className="text-2xl font-bold">Funil de Clientes</h1>
           <p className="text-sm text-muted-foreground">{leads.length} cadastrado(s)</p>
         </div>
         <div className="flex gap-2">
@@ -166,7 +167,6 @@ export default function LeadsPage() {
                   </Select>
                 </div>
 
-                {/* Motivo da Perda - only when status is 'perdido' */}
                 {form.status === 'perdido' && (
                   <div className="space-y-3 p-3 rounded-lg border border-destructive/30 bg-destructive/5">
                     <div>
@@ -195,7 +195,6 @@ export default function LeadsPage() {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap gap-3 items-end">
         <div className="flex-1 min-w-[180px]">
           <Input placeholder="Buscar por nome ou telefone..." value={search} onChange={e => setSearch(e.target.value)} className="h-9" />
@@ -223,7 +222,6 @@ export default function LeadsPage() {
         </Select>
       </div>
 
-      {/* Loss reason summary */}
       {lossReasonCounts.length > 0 && (
         <div className="flex flex-wrap gap-2">
           <span className="text-xs text-muted-foreground self-center">Perdas:</span>
@@ -235,17 +233,16 @@ export default function LeadsPage() {
         </div>
       )}
 
-      {/* Kanban View */}
       {view === 'kanban' && (
         <div className="overflow-x-auto pb-4 -mx-4 px-4 md:-mx-6 md:px-6">
-          <div className="flex gap-3 min-w-[900px]">
+          <div className="flex gap-3 min-w-[1100px]">
             {LEAD_STATUSES.map(status => {
               const columnLeads = filtered.filter(l => l.status === status);
               return (
-                <div key={status} className={`flex-1 min-w-[160px] bg-card rounded-xl border border-t-4 ${kanbanColumnColor[status]} shadow-sm`}>
+                <div key={status} className={`flex-1 min-w-[145px] bg-card rounded-xl border border-t-4 ${kanbanColumnColor[status]} shadow-sm`}>
                   <div className="p-3 border-b">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{LEAD_STATUS_LABELS[status]}</h3>
+                      <h3 className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{LEAD_STATUS_LABELS[status]}</h3>
                       <Badge variant="secondary" className="text-[10px] h-5 min-w-[20px] justify-center">{columnLeads.length}</Badge>
                     </div>
                   </div>
@@ -277,7 +274,6 @@ export default function LeadsPage() {
         </div>
       )}
 
-      {/* List View */}
       {view === 'list' && (
         filtered.length === 0 ? (
           <Card><CardContent className="py-12 text-center text-muted-foreground">Nenhum cliente encontrado.</CardContent></Card>

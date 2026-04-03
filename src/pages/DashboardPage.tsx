@@ -17,7 +17,7 @@ function getDaysUntil(deadline: string): number {
 }
 
 export default function DashboardPage() {
-  const { sales, lostSales, finance, products, production, leads, getProductName, getLeadName } = useCrm();
+  const { sales, lostSales, finance, products, production, leads, cancellations, getProductName, getLeadName } = useCrm();
 
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
@@ -91,11 +91,15 @@ export default function DashboardPage() {
   // Top products breakdown
   const topProducts = Object.entries(productCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
+  const totalCancellations = cancellations.length;
+  const totalReembolsoValue = cancellations.filter(c => c.reembolso === 'sim').reduce((s, c) => s + c.closingValue, 0);
+  const totalClients = leads.length;
+
   const cards = [
-    { title: "Vendas", value: totalSalesCount, icon: ShoppingBag, color: "text-primary" },
-    { title: "Faturamento", value: `R$ ${totalRevenue.toFixed(2)}`, icon: DollarSign, color: "text-success" },
-    { title: "Lucro", value: `R$ ${totalProfit.toFixed(2)}`, icon: TrendingUp, color: "text-success" },
-    { title: "Vendas Perdidas", value: monthlyLost.length, icon: XCircle, color: "text-destructive" },
+    { title: "Total Clientes", value: totalClients, icon: ShoppingBag, color: "text-primary" },
+    { title: "Vendas", value: totalSalesCount, icon: DollarSign, color: "text-success" },
+    { title: "Faturamento", value: `R$ ${totalRevenue.toFixed(2)}`, icon: TrendingUp, color: "text-success" },
+    { title: "Cancelamentos", value: totalCancellations, icon: XCircle, color: "text-destructive" },
   ];
 
   return (
@@ -155,27 +159,6 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Financial summary */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Saldo Financeiro</CardTitle></CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div>
-                <p className="text-xs text-muted-foreground">Entradas</p>
-                <p className="text-base font-bold text-success">R$ {entradas.toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Saídas</p>
-                <p className="text-base font-bold text-destructive">R$ {saidas.toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Saldo</p>
-                <p className={`text-base font-bold ${saldo >= 0 ? 'text-success' : 'text-destructive'}`}>R$ {saldo.toFixed(2)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Top product */}
         <Card className="shadow-sm">
           <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><BarChart3 className="h-4 w-4" /> Produtos Mais Vendidos</CardTitle></CardHeader>
@@ -246,45 +229,52 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Monthly Report Section */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">📋 Relatório Mensal — {MONTHS[selectedMonth]} {selectedYear}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div>
-              <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2">Vendas</h4>
-              <p className="text-sm">{totalSalesCount} venda(s) realizadas</p>
-              <p className="text-sm">Faturamento: <span className="font-semibold text-success">R$ {totalRevenue.toFixed(2)}</span></p>
-              <p className="text-sm">Lucro: <span className="font-semibold text-success">R$ {totalProfit.toFixed(2)}</span></p>
-              {totalRevenue > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">Margem: {((totalProfit / totalRevenue) * 100).toFixed(1)}%</p>
-              )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">📋 Relatório Mensal — {MONTHS[selectedMonth]} {selectedYear}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2">Vendas</h4>
+                <p className="text-sm">{totalSalesCount} venda(s) realizadas</p>
+                <p className="text-sm">Faturamento: <span className="font-semibold text-success">R$ {totalRevenue.toFixed(2)}</span></p>
+                <p className="text-sm">Lucro: <span className="font-semibold text-success">R$ {totalProfit.toFixed(2)}</span></p>
+                {totalRevenue > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">Margem: {((totalProfit / totalRevenue) * 100).toFixed(1)}%</p>
+                )}
+              </div>
+              <div>
+                <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2">Cancelamentos & Reembolsos</h4>
+                <p className="text-sm">{totalCancellations} cancelamento(s)</p>
+                <p className="text-sm">Valor reembolsos: <span className="font-semibold text-destructive">R$ {totalReembolsoValue.toFixed(2)}</span></p>
+                <p className="text-sm mt-2">{monthlyLost.length} venda(s) perdida(s)</p>
+              </div>
             </div>
-            <div>
-              <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2">Vendas Perdidas</h4>
-              <p className="text-sm">{monthlyLost.length} oportunidade(s) perdida(s)</p>
-              {lostByReason.length > 0 && (
-                <div className="mt-1 space-y-1">
-                  {lostByReason.map(([reason, count]) => (
-                    <div key={reason} className="flex items-center gap-2 text-xs">
-                      <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200 text-[10px]">{count}x</Badge>
-                      <span>{LOST_REASON_LABELS[reason as keyof typeof LOST_REASON_LABELS] || reason}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Saldo Financeiro</CardTitle></CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div>
+                <p className="text-xs text-muted-foreground">Entradas</p>
+                <p className="text-base font-bold text-success">R$ {entradas.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Saídas</p>
+                <p className="text-base font-bold text-destructive">R$ {saidas.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Saldo</p>
+                <p className={`text-base font-bold ${saldo >= 0 ? 'text-success' : 'text-destructive'}`}>R$ {saldo.toFixed(2)}</p>
+              </div>
             </div>
-            <div>
-              <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2">Financeiro</h4>
-              <p className="text-sm">Entradas: <span className="text-success font-medium">R$ {entradas.toFixed(2)}</span></p>
-              <p className="text-sm">Saídas: <span className="text-destructive font-medium">R$ {saidas.toFixed(2)}</span></p>
-              <p className="text-sm mt-1">Saldo: <span className={`font-bold ${saldo >= 0 ? 'text-success' : 'text-destructive'}`}>R$ {saldo.toFixed(2)}</span></p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
