@@ -1,4 +1,4 @@
-export type LeadStatus = 'novo' | 'em_atendimento' | 'orcamento_enviado' | 'aguardando_resposta' | 'fechado_ganho' | 'perdido';
+export type LeadStatus = 'lead_instagram' | 'primeiro_contato' | 'orcamento_enviado' | 'negociacao' | 'fechado_ganho' | 'pos_venda' | 'perdido';
 export type PaymentMethod = 'pix' | 'dinheiro' | 'cartao';
 export type SaleStatus = 'pendente' | 'pago' | 'cancelado';
 export type LostReason = 'preco_alto' | 'desistencia' | 'demora' | 'outro';
@@ -7,6 +7,8 @@ export type ProductionStatus = 'em_producao' | 'pronto' | 'entregue';
 export type FinanceType = 'entrada' | 'saida';
 export type FinanceCategory = 'venda' | 'custo_material' | 'outros';
 export type LeadOrigin = 'instagram' | 'indicacao' | 'whatsapp' | 'facebook' | 'outro';
+export type CancellationStatus = 'em_analise' | 'aprovado' | 'negado';
+export type ReembolsoOption = 'sim' | 'nao';
 
 export interface Lead {
   id: string;
