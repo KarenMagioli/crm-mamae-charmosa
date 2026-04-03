@@ -17,7 +17,7 @@ function getDaysUntil(deadline: string): number {
 }
 
 export default function DashboardPage() {
-  const { sales, lostSales, finance, products, production, leads, getProductName, getLeadName } = useCrm();
+  const { sales, lostSales, finance, products, production, leads, cancellations, getProductName, getLeadName } = useCrm();
 
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
