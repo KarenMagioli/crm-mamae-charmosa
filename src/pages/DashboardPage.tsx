@@ -2,13 +2,13 @@ import { useMemo, useState } from "react";
 import { useCrm } from "@/contexts/CrmContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingBag, DollarSign, XCircle, TrendingUp, AlertTriangle, Clock, BarChart3 } from "lucide-react";
+import { ShoppingBag, DollarSign, XCircle, TrendingUp, AlertTriangle, Clock, BarChart3, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { LOST_REASON_LABELS, LEAD_LOSS_REASON_LABELS } from "@/types/crm";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const CHART_COLORS = ['#ef4444', '#f97316', '#eab308', '#8b5cf6', '#6b7280', '#3b82f6', '#10b981'];
 
 function getDaysUntil(deadline: string): number {
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -17,7 +17,7 @@ function getDaysUntil(deadline: string): number {
 }
 
 export default function DashboardPage() {
-  const { sales, lostSales, finance, products, production, leads, cancellations, getProductName, getLeadName } = useCrm();
+  const { sales, finance, products, production, leads, getProductName, getLeadName } = useCrm();
 
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
@@ -38,22 +38,13 @@ export default function DashboardPage() {
 
   const totalSalesCount = monthlySales.length;
   const totalRevenue = monthlySales.reduce((sum, s) => sum + s.value, 0);
-  
   const getProductCost = (id: string) => products.find(p => p.id === id)?.cost || 0;
   const totalProfit = monthlySales.reduce((sum, s) => sum + (s.value - getProductCost(s.productId)), 0);
 
-  const monthlyLost = useMemo(() => lostSales.filter(ls => {
-    const d = new Date(ls.date);
-    return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
-  }), [lostSales, selectedMonth, selectedYear]);
-
-  // Most sold product
   const productCount: Record<string, number> = {};
   monthlySales.forEach(s => { productCount[s.productId] = (productCount[s.productId] || 0) + 1; });
-  const topProductId = Object.entries(productCount).sort((a, b) => b[1] - a[1])[0]?.[0];
-  const topProduct = topProductId ? getProductName(topProductId) : '—';
+  const topProducts = Object.entries(productCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
-  // Financial balance
   const monthlyFinance = useMemo(() => finance.filter(f => {
     const d = new Date(f.date);
     return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
@@ -63,43 +54,38 @@ export default function DashboardPage() {
   const saidas = monthlyFinance.filter(f => f.type === 'saida').reduce((s, f) => s + f.value, 0);
   const saldo = entradas - saidas;
 
-  // Urgent production orders
   const urgentOrders = useMemo(() => production.filter(o => {
     if (o.status === 'entregue' || !o.deadline) return false;
     return getDaysUntil(o.deadline) <= 3;
   }).sort((a, b) => getDaysUntil(a.deadline) - getDaysUntil(b.deadline)), [production]);
 
-  // Lost reasons breakdown (from lostSales)
-  const lostByReason = useMemo(() => {
-    const map: Record<string, number> = {};
-    monthlyLost.forEach(ls => { map[ls.reason] = (map[ls.reason] || 0) + 1; });
-    return Object.entries(map).sort((a, b) => b[1] - a[1]);
-  }, [monthlyLost]);
+  // Funnel stats from leads
+  const totalClients = leads.length;
+  const pedidosCancelamento = leads.filter(l => l.status === 'pedido_cancelamento').length;
+  const cancelados = leads.filter(l => l.status === 'cancelado').length;
+  const totalLeadValue = leads.filter(l => l.status !== 'cancelado' && l.status !== 'pedido_cancelamento').reduce((s, l) => s + (l.closingValue || 0), 0);
+  const totalLostValue = leads.filter(l => l.status === 'cancelado').reduce((s, l) => s + (l.closingValue || 0), 0);
+  const totalReembolso = leads.filter(l => l.status === 'cancelado' && l.reembolso === 'sim').reduce((s, l) => s + (l.closingValue || 0), 0);
 
-  // Lead loss reasons breakdown (from leads with status 'perdido')
-  const LOSS_COLORS = ['#ef4444', '#f97316', '#eab308', '#8b5cf6', '#6b7280'];
-  const leadLossReasonData = useMemo(() => {
-    const lostLeads = leads.filter(l => l.status === 'perdido' && l.lossReason);
+  // Value lost by product
+  const lostByProduct = useMemo(() => {
     const map: Record<string, number> = {};
-    lostLeads.forEach(l => { if (l.lossReason) map[l.lossReason] = (map[l.lossReason] || 0) + 1; });
-    return Object.entries(map).map(([key, value]) => ({
-      name: LEAD_LOSS_REASON_LABELS[key as keyof typeof LEAD_LOSS_REASON_LABELS] || key,
-      value,
-    })).sort((a, b) => b.value - a.value);
+    leads.filter(l => l.status === 'cancelado' && l.productInterest).forEach(l => {
+      const prod = l.productInterest;
+      map[prod] = (map[prod] || 0) + (l.closingValue || 0);
+    });
+    return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, [leads]);
 
-  // Top products breakdown
-  const topProducts = Object.entries(productCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
-
-  const totalCancellations = cancellations.length;
-  const totalReembolsoValue = cancellations.filter(c => c.reembolso === 'sim').reduce((s, c) => s + c.closingValue, 0);
-  const totalClients = leads.length;
+  const topLostProduct = lostByProduct[0]?.name || '—';
 
   const cards = [
-    { title: "Total Clientes", value: totalClients, icon: ShoppingBag, color: "text-primary" },
-    { title: "Vendas", value: totalSalesCount, icon: DollarSign, color: "text-success" },
-    { title: "Faturamento", value: `R$ ${totalRevenue.toFixed(2)}`, icon: TrendingUp, color: "text-success" },
-    { title: "Cancelamentos", value: totalCancellations, icon: XCircle, color: "text-destructive" },
+    { title: "Total no Funil", value: totalClients, icon: Users, color: "text-primary" },
+    { title: "Ped. Cancelamento", value: pedidosCancelamento, icon: AlertTriangle, color: "text-amber-500" },
+    { title: "Cancelados", value: cancelados, icon: XCircle, color: "text-destructive" },
+    { title: "Vendas (mês)", value: totalSalesCount, icon: ShoppingBag, color: "text-emerald-500" },
+    { title: "Faturamento (mês)", value: `R$ ${totalRevenue.toFixed(2)}`, icon: TrendingUp, color: "text-emerald-500" },
+    { title: "Valor Perdido", value: `R$ ${totalLostValue.toFixed(2)}`, icon: DollarSign, color: "text-destructive" },
   ];
 
   return (
@@ -107,7 +93,7 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground text-sm">Resumo mensal</p>
+          <p className="text-muted-foreground text-sm">Resumo geral e mensal</p>
         </div>
         <div className="flex gap-2">
           <Select value={String(selectedMonth)} onValueChange={v => setSelectedMonth(Number(v))}>
@@ -121,7 +107,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Urgent alerts */}
       {urgentOrders.length > 0 && (
         <Alert variant="destructive" className="border-orange-300 bg-orange-50 text-orange-900">
           <AlertTriangle className="h-4 w-4" />
@@ -144,7 +129,7 @@ export default function DashboardPage() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {cards.map((c) => (
           <Card key={c.title} className="shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -158,8 +143,35 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      {/* Lost value by product */}
+      {lostByProduct.length > 0 && (
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" /> Valor Perdido por Produto (Cancelamentos)
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Produto com maior perda: <strong className="text-destructive">{topLostProduct}</strong> · Total perdido: <strong className="text-destructive">R$ {totalLostValue.toFixed(2)}</strong>
+              {totalReembolso > 0 && <> · Reembolsos: <strong className="text-amber-600">R$ {totalReembolso.toFixed(2)}</strong></>}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={Math.max(200, lostByProduct.length * 40)}>
+              <BarChart data={lostByProduct} layout="vertical" margin={{ left: 10 }}>
+                <XAxis type="number" tickFormatter={v => `R$ ${v}`} />
+                <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12 }} />
+                <Tooltip formatter={(v: number) => `R$ ${v.toFixed(2)}`} />
+                <Bar dataKey="value" name="Valor perdido" radius={[0, 4, 4, 0]}>
+                  {lostByProduct.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Top product */}
+        {/* Top products sold */}
         <Card className="shadow-sm">
           <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><BarChart3 className="h-4 w-4" /> Produtos Mais Vendidos</CardTitle></CardHeader>
           <CardContent>
@@ -188,48 +200,8 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {/* Loss Reason Charts */}
-      {leadLossReasonData.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2"><CardTitle className="text-sm">🥧 Motivos de Perda (Pizza)</CardTitle></CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie data={leadLossReasonData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
-                    {leadLossReasonData.map((_, i) => (
-                      <Cell key={i} fill={LOSS_COLORS[i % LOSS_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2"><CardTitle className="text-sm">📊 Motivos de Perda (Barras)</CardTitle></CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={leadLossReasonData} layout="vertical" margin={{ left: 20 }}>
-                  <XAxis type="number" allowDecimals={false} />
-                  <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Bar dataKey="value" name="Leads perdidos" radius={[0, 4, 4, 0]}>
-                    {leadLossReasonData.map((_, i) => (
-                      <Cell key={i} fill={LOSS_COLORS[i % LOSS_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Monthly report */}
         <Card className="shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">📋 Relatório Mensal — {MONTHS[selectedMonth]} {selectedYear}</CardTitle>
@@ -239,37 +211,17 @@ export default function DashboardPage() {
               <div>
                 <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2">Vendas</h4>
                 <p className="text-sm">{totalSalesCount} venda(s) realizadas</p>
-                <p className="text-sm">Faturamento: <span className="font-semibold text-success">R$ {totalRevenue.toFixed(2)}</span></p>
-                <p className="text-sm">Lucro: <span className="font-semibold text-success">R$ {totalProfit.toFixed(2)}</span></p>
-                {totalRevenue > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">Margem: {((totalProfit / totalRevenue) * 100).toFixed(1)}%</p>
-                )}
+                <p className="text-sm">Faturamento: <span className="font-semibold text-emerald-600">R$ {totalRevenue.toFixed(2)}</span></p>
+                <p className="text-sm">Lucro: <span className="font-semibold text-emerald-600">R$ {totalProfit.toFixed(2)}</span></p>
+                {totalRevenue > 0 && <p className="text-xs text-muted-foreground mt-1">Margem: {((totalProfit / totalRevenue) * 100).toFixed(1)}%</p>}
               </div>
               <div>
-                <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2">Cancelamentos & Reembolsos</h4>
-                <p className="text-sm">{totalCancellations} cancelamento(s)</p>
-                <p className="text-sm">Valor reembolsos: <span className="font-semibold text-destructive">R$ {totalReembolsoValue.toFixed(2)}</span></p>
-                <p className="text-sm mt-2">{monthlyLost.length} venda(s) perdida(s)</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Saldo Financeiro</CardTitle></CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div>
-                <p className="text-xs text-muted-foreground">Entradas</p>
-                <p className="text-base font-bold text-success">R$ {entradas.toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Saídas</p>
-                <p className="text-base font-bold text-destructive">R$ {saidas.toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Saldo</p>
-                <p className={`text-base font-bold ${saldo >= 0 ? 'text-success' : 'text-destructive'}`}>R$ {saldo.toFixed(2)}</p>
+                <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2">Saldo Financeiro</h4>
+                <div className="space-y-1">
+                  <p className="text-sm">Entradas: <span className="font-semibold text-emerald-600">R$ {entradas.toFixed(2)}</span></p>
+                  <p className="text-sm">Saídas: <span className="font-semibold text-destructive">R$ {saidas.toFixed(2)}</span></p>
+                  <p className={`text-sm font-bold ${saldo >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>Saldo: R$ {saldo.toFixed(2)}</p>
+                </div>
               </div>
             </div>
           </CardContent>
