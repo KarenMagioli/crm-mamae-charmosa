@@ -9,11 +9,9 @@ import { AppLayout } from "@/components/AppLayout";
 import DashboardPage from "./pages/DashboardPage";
 import LeadsPage from "./pages/LeadsPage";
 import SalesPage from "./pages/SalesPage";
-import LostSalesPage from "./pages/LostSalesPage";
 import ProductsPage from "./pages/ProductsPage";
 import FinancePage from "./pages/FinancePage";
 import ProductionPage from "./pages/ProductionPage";
-import CancellationsPage from "./pages/CancellationsPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -25,30 +23,14 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   if (user) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
@@ -69,11 +51,9 @@ const AppRoutes = () => (
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/leads" element={<LeadsPage />} />
                 <Route path="/vendas" element={<SalesPage />} />
-                <Route path="/vendas-perdidas" element={<LostSalesPage />} />
                 <Route path="/produtos" element={<ProductsPage />} />
                 <Route path="/financeiro" element={<FinancePage />} />
                 <Route path="/producao" element={<ProductionPage />} />
-                <Route path="/cancelamentos" element={<CancellationsPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </AppLayout>
