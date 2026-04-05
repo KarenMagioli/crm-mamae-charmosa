@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Lead, Product, Sale, LostSale, ProductionOrder, FinanceEntry, CancellationRequest } from '@/types/crm';
+import { Lead, Product, Sale, LostSale, ProductionOrder, FinanceEntry } from '@/types/crm';
 
 interface CrmState {
   leads: Lead[];
@@ -8,7 +8,6 @@ interface CrmState {
   lostSales: LostSale[];
   production: ProductionOrder[];
   finance: FinanceEntry[];
-  cancellations: CancellationRequest[];
 }
 
 interface CrmContextType extends CrmState {
@@ -27,9 +26,6 @@ interface CrmContextType extends CrmState {
   deleteProductionOrder: (id: string) => void;
   addFinanceEntry: (entry: Omit<FinanceEntry, 'id'>) => void;
   deleteFinanceEntry: (id: string) => void;
-  addCancellation: (c: Omit<CancellationRequest, 'id'>) => void;
-  updateCancellation: (c: CancellationRequest) => void;
-  deleteCancellation: (id: string) => void;
   getLeadName: (id: string) => string;
   getProductName: (id: string) => string;
 }
@@ -52,7 +48,6 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
   const [lostSales, setLostSales] = useState<LostSale[]>(() => load('crm_lostSales', []));
   const [production, setProduction] = useState<ProductionOrder[]>(() => load('crm_production', []));
   const [finance, setFinance] = useState<FinanceEntry[]>(() => load('crm_finance', []));
-  const [cancellations, setCancellations] = useState<CancellationRequest[]>(() => load('crm_cancellations', []));
 
   useEffect(() => { localStorage.setItem('crm_leads', JSON.stringify(leads)); }, [leads]);
   useEffect(() => { localStorage.setItem('crm_products', JSON.stringify(products)); }, [products]);
@@ -60,13 +55,12 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => { localStorage.setItem('crm_lostSales', JSON.stringify(lostSales)); }, [lostSales]);
   useEffect(() => { localStorage.setItem('crm_production', JSON.stringify(production)); }, [production]);
   useEffect(() => { localStorage.setItem('crm_finance', JSON.stringify(finance)); }, [finance]);
-  useEffect(() => { localStorage.setItem('crm_cancellations', JSON.stringify(cancellations)); }, [cancellations]);
 
   const getLeadName = useCallback((id: string) => leads.find(l => l.id === id)?.name || 'Desconhecido', [leads]);
   const getProductName = useCallback((id: string) => products.find(p => p.id === id)?.name || 'Desconhecido', [products]);
 
   const value: CrmContextType = {
-    leads, products, sales, lostSales, production, finance, cancellations,
+    leads, products, sales, lostSales, production, finance,
     getLeadName, getProductName,
     addLead: (l) => setLeads(prev => [...prev, { ...l, id: uid(), createdAt: new Date().toISOString() }]),
     updateLead: (l) => setLeads(prev => prev.map(x => x.id === l.id ? l : x)),
@@ -83,9 +77,6 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
     deleteProductionOrder: (id) => setProduction(prev => prev.filter(x => x.id !== id)),
     addFinanceEntry: (e) => setFinance(prev => [...prev, { ...e, id: uid() }]),
     deleteFinanceEntry: (id) => setFinance(prev => prev.filter(x => x.id !== id)),
-    addCancellation: (c) => setCancellations(prev => [...prev, { ...c, id: uid() }]),
-    updateCancellation: (c) => setCancellations(prev => prev.map(x => x.id === c.id ? c : x)),
-    deleteCancellation: (id) => setCancellations(prev => prev.filter(x => x.id !== id)),
   };
 
   return <CrmContext.Provider value={value}>{children}</CrmContext.Provider>;

@@ -1,7 +1,6 @@
-import { LayoutDashboard, Users, ShoppingBag, Package, DollarSign, ClipboardList, XCircle, LogOut, Ban } from "lucide-react";
+import { LayoutDashboard, Users, ShoppingBag, Package, DollarSign, ClipboardList, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -17,8 +16,6 @@ const items = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Funil de Clientes", url: "/leads", icon: Users },
   { title: "Vendas", url: "/vendas", icon: ShoppingBag },
-  { title: "Vendas Perdidas", url: "/vendas-perdidas", icon: XCircle },
-  { title: "Cancelamentos", url: "/cancelamentos", icon: Ban },
   { title: "Produtos", url: "/produtos", icon: Package },
   { title: "Financeiro", url: "/financeiro", icon: DollarSign },
   { title: "Produção", url: "/producao", icon: ClipboardList },
